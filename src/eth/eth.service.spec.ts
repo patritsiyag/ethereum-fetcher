@@ -1,4 +1,3 @@
-// src/eth/eth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -6,7 +5,7 @@ import { EthereumService } from './eth.service';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
+import { TransactionService } from '../transactions/transaction.service';
 import { TransactionResponse } from 'ethers';
 import { TransactionReceipt } from 'ethers';
 import { Provider, Block, OrphanFilter } from 'ethers';
@@ -60,7 +59,7 @@ describe('EthereumService', () => {
   let transactionRepository: Repository<Transaction>;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let transactionTrackingService: TransactionTrackingService;
+  let transactionService: TransactionService;
 
   const mockTransactions: Transaction[] = [
     {
@@ -179,7 +178,7 @@ describe('EthereumService', () => {
           },
         },
         {
-          provide: TransactionTrackingService,
+          provide: TransactionService,
           useValue: {
             trackTransactionsForUser: jest.fn().mockResolvedValue(undefined),
           },
@@ -193,9 +192,7 @@ describe('EthereumService', () => {
     );
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-    transactionTrackingService = module.get<TransactionTrackingService>(
-      TransactionTrackingService,
-    );
+    transactionService = module.get<TransactionService>(TransactionService);
 
     service['provider'] = {
       getTransaction: jest.fn(),
@@ -300,7 +297,7 @@ describe('EthereumService', () => {
         .spyOn(userRepository, 'findOne')
         .mockResolvedValue(mockUser as User);
       const trackSpy = jest.spyOn(
-        transactionTrackingService,
+        transactionService,
         'trackTransactionsForUser',
       );
 
@@ -319,7 +316,7 @@ describe('EthereumService', () => {
         .spyOn(jwtService, 'verifyAsync')
         .mockRejectedValue(new Error('Invalid token'));
       const trackSpy = jest.spyOn(
-        transactionTrackingService,
+        transactionService,
         'trackTransactionsForUser',
       );
 

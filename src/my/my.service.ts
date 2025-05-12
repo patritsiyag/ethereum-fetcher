@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { TransactionDto, fromEntity } from '../transactions/transactions.dto';
-import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
+import { TransactionService } from '../transactions/transaction.service';
 
 @Injectable()
 export class MyService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private transactionTrackingService: TransactionTrackingService,
+    private transactionService: TransactionService,
   ) {}
 
   async getMyTransactions(userId: number): Promise<TransactionDto[]> {
@@ -23,7 +23,7 @@ export class MyService {
     }
 
     const transactions =
-      await this.transactionTrackingService.getUserTransactions(userId);
+      await this.transactionService.getUserTransactions(userId);
 
     return transactions.map((tx) => fromEntity(tx));
   }

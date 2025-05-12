@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { TransactionTrackingService } from './transaction-tracking.service';
+import { TransactionService } from './transaction.service';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from './entities/transaction.entity';
 
-describe('TransactionTrackingService', () => {
-  let service: TransactionTrackingService;
+describe('TransactionService', () => {
+  let service: TransactionService;
   let userRepository: Repository<User>;
   let transactionRepository: Repository<Transaction>;
 
@@ -65,7 +65,7 @@ describe('TransactionTrackingService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TransactionTrackingService,
+        TransactionService,
         {
           provide: getRepositoryToken(User),
           useValue: {
@@ -91,9 +91,7 @@ describe('TransactionTrackingService', () => {
       ],
     }).compile();
 
-    service = module.get<TransactionTrackingService>(
-      TransactionTrackingService,
-    );
+    service = module.get<TransactionService>(TransactionService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     transactionRepository = module.get<Repository<Transaction>>(
       getRepositoryToken(Transaction),

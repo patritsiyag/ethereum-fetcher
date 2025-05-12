@@ -12,7 +12,7 @@ import { validate } from 'class-validator';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
+import { TransactionService } from '../transactions/transaction.service';
 
 @Injectable()
 export class EthereumService {
@@ -24,8 +24,8 @@ export class EthereumService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private jwtService: JwtService,
-    private transactionTrackingService: TransactionTrackingService,
+    private readonly jwtService: JwtService,
+    private readonly transactionService: TransactionService,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.ETH_NODE_URL);
   }
@@ -89,7 +89,7 @@ export class EthereumService {
     if (authToken) {
       const user = await this.getUserFromToken(authToken);
       if (user) {
-        await this.transactionTrackingService.trackTransactionsForUser(
+        await this.transactionService.trackTransactionsForUser(
           user.id,
           allTransactions,
         );
