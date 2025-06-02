@@ -49,6 +49,7 @@ A REST API server that fetches and stores Ethereum transaction information. The 
 2. **Database Choice: PostgreSQL**
    - ACID compliance for transaction data
    - JSON support for flexible schema
+   - Migration-based schema management
 
 3. **Authentication: JWT**
    - Stateless authentication
@@ -63,31 +64,6 @@ A REST API server that fetches and stores Ethereum transaction information. The 
 - PostgreSQL database
 - Ethereum node URL (from Infura or Alchemy)
 
-### Database Setup
-
-1. **Install PostgreSQL**:
-   ```bash
-   # For macOS:
-   brew install postgresql
-   brew services start postgresql
-
-   # For Windows:
-   # Download and install from https://www.postgresql.org/download/windows/
-   ```
-
-2. **Create Database**:
-   ```bash
-   # Create a new database
-   createdb ethereum_fetcher
-   ```
-
-3. **Configure Database Connection**:
-   In your `.env` file, set the database connection URL:
-   ```env
-   DB_CONNECTION_URL=postgresql://username:password@localhost:5432/ethereum_fetcher
-   ```
-   Replace `username` and `password` with your PostgreSQL credentials.
-
 ### Environment Variables
 
 Create a `.env` file in the root directory:
@@ -95,7 +71,7 @@ Create a `.env` file in the root directory:
 ```env
 API_PORT=3000
 ETH_NODE_URL=https://sepolia.infura.io/v3/YOUR-PROJECT-ID
-DB_CONNECTION_URL=postgresql://username:password@localhost:5432/ethereum_fetcher
+DB_CONNECTION_URL=postgresql://username:password@localhost:5432/postgres
 JWT_SECRET=your-secret-key
 ```
 
@@ -103,17 +79,32 @@ JWT_SECRET=your-secret-key
 
 1. Clone the repository
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+yarn install
+```
 3. Copy the environment configuration template:
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
+
 4. Start the server:
-   ```bash
-   npm run start:dev
-   ```
+```bash
+yarn run start:dev
+```
+
+### Database Setup
+
+The application uses TypeORM migrations for database management. Migrations are automatically run on application startup, ensuring your database is always in the correct state.
+
+#### Initial Data
+
+The application comes with a migration that seeds initial users:
+- alice/alice
+- bob/bob
+- carol/carol
+- dave/dave
+
+These users are created with hashed passwords and can be used for testing.
 
 ## API Documentation
 
@@ -201,7 +192,7 @@ Authenticates a user and returns a JWT token.
 
 Run the test suite:
 ```bash
-npm test
+yarn test
 ```
 
 > **Note:** The test suite uses **Jest** (not Mocha as in the original requirements).
@@ -211,7 +202,6 @@ The test suite covers:
 - RLP decoding
 - Database operations
 - JWT token generation and validation
-
 
 ## Areas for Improvement
 

@@ -5,6 +5,11 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { User } from '../users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -53,12 +58,17 @@ describe('AuthService', () => {
 
       findOneSpy.mockResolvedValue(mockUser);
       signAsyncSpy.mockResolvedValue(mockToken);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser(mockUsername, mockPassword);
 
       expect(findOneSpy).toHaveBeenCalledWith({
         where: { username: mockUsername },
       });
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        mockPassword,
+        mockUser.password,
+      );
       expect(signAsyncSpy).toHaveBeenCalledWith({
         username: mockUser.username,
         sub: mockUser.id,
@@ -88,6 +98,7 @@ describe('AuthService', () => {
       const signAsyncSpy = jest.spyOn(jwtService, 'signAsync');
 
       findOneSpy.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
         service.validateUser(mockUsername, wrongPassword),
@@ -96,6 +107,10 @@ describe('AuthService', () => {
       expect(findOneSpy).toHaveBeenCalledWith({
         where: { username: mockUsername },
       });
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        wrongPassword,
+        mockUser.password,
+      );
       expect(signAsyncSpy).not.toHaveBeenCalled();
     });
   });

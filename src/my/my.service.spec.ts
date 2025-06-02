@@ -4,13 +4,13 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { MyService } from './my.service';
 import { User } from '../users/entities/user.entity';
-import { TransactionService } from '../transactions/transaction.service';
+import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
 import { Transaction } from '../transactions/entities/transaction.entity';
 
 describe('MyService', () => {
   let service: MyService;
   let userRepository: Repository<User>;
-  let transactionService: TransactionService;
+  let transactionTrackingService: TransactionTrackingService;
 
   const mockUser: User = {
     id: 1,
@@ -59,7 +59,7 @@ describe('MyService', () => {
           },
         },
         {
-          provide: TransactionService,
+          provide: TransactionTrackingService,
           useValue: {
             getUserTransactions: jest.fn(),
           },
@@ -69,14 +69,16 @@ describe('MyService', () => {
 
     service = module.get<MyService>(MyService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    transactionService = module.get<TransactionService>(TransactionService);
+    transactionTrackingService = module.get<TransactionTrackingService>(
+      TransactionTrackingService,
+    );
   });
 
   describe('getMyTransactions', () => {
     it('should return user transactions when user exists', async () => {
       const findOneSpy = jest.spyOn(userRepository, 'findOne');
       const getUserTransactionsSpy = jest.spyOn(
-        transactionService,
+        transactionTrackingService,
         'getUserTransactions',
       );
 
@@ -95,7 +97,7 @@ describe('MyService', () => {
     it('should throw UnauthorizedException when user is not found', async () => {
       const findOneSpy = jest.spyOn(userRepository, 'findOne');
       const getUserTransactionsSpy = jest.spyOn(
-        transactionService,
+        transactionTrackingService,
         'getUserTransactions',
       );
 
