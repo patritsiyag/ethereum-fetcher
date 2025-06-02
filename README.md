@@ -80,7 +80,7 @@ JWT_SECRET=your-secret-key
 1. Clone the repository
 2. Install dependencies:
 ```bash
-yarn install
+npm install
 ```
 3. Copy the environment configuration template:
 ```bash
@@ -89,7 +89,7 @@ cp .env.example .env
 
 4. Start the server:
 ```bash
-yarn run start:dev
+npm run start:dev
 ```
 
 ### Database Setup
@@ -192,7 +192,7 @@ Authenticates a user and returns a JWT token.
 
 Run the test suite:
 ```bash
-yarn test
+npm test
 ```
 
 > **Note:** The test suite uses **Jest** (not Mocha as in the original requirements).
