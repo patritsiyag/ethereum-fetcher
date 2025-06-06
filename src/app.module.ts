@@ -22,11 +22,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'postgres',
-      port: 5432,
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'ethereum_fetcher',
+      url: process.env.DB_CONNECTION_URL,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/migrations/*{.ts,.js}'],
       migrationsRun: true,
