@@ -1,11 +1,32 @@
 import { Controller, Get, Query, Param, Headers } from '@nestjs/common';
 import { EthereumService } from './eth.service';
 import { TransactionDto } from '../transactions/transactions.dto';
+import { GetTransactionsDto } from './dto/get-transactions.dto';
+import {
+  getTransactionsByHashesOperation,
+  getTransactionsByHashesQuery,
+  getTransactionsByHashesResponse,
+  getTransactionsByHashesResponse400,
+  getTransactionsByHashesResponse500,
+  getTransactionsByRlpOperation,
+  getTransactionsByRlpParam,
+  getTransactionsByRlpResponse,
+  getTransactionsByRlpResponse400,
+  getTransactionsByRlpResponse500,
+  jwtHeader,
+} from './swagger.docs';
+
 @Controller('eth')
 export class EthereumController {
   constructor(private readonly ethereumService: EthereumService) {}
 
   @Get(':rlphex')
+  @getTransactionsByRlpOperation
+  @getTransactionsByRlpParam
+  @getTransactionsByRlpResponse
+  @getTransactionsByRlpResponse400
+  @getTransactionsByRlpResponse500
+  @jwtHeader
   async getTransactionsByRlpHex(
     @Param('rlphex') rlphex: string,
     @Headers('AUTH_TOKEN') authToken?: string,
@@ -22,31 +43,18 @@ export class EthereumController {
   }
 
   @Get()
+  @getTransactionsByHashesOperation
+  @getTransactionsByHashesQuery
+  @getTransactionsByHashesResponse
+  @getTransactionsByHashesResponse400
+  @getTransactionsByHashesResponse500
+  @jwtHeader
   async getTransactions(
-    @Query('transactionHashes') transactionHashes: string | string[],
+    @Query() query: GetTransactionsDto,
     @Headers('AUTH_TOKEN') authToken?: string,
   ): Promise<{ transactions: TransactionDto[] }> {
-    let hashes: string[];
-    if (typeof transactionHashes === 'string') {
-      try {
-        const parsed: unknown = JSON.parse(transactionHashes);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every((h) => typeof h === 'string')
-        ) {
-          hashes = parsed;
-        } else {
-          hashes = [transactionHashes];
-        }
-      } catch {
-        hashes = [transactionHashes];
-      }
-    } else {
-      hashes = transactionHashes;
-    }
-
     const transactions = await this.ethereumService.getTransactionsByHashes(
-      hashes,
+      query.transactionHashes,
       authToken,
     );
     return { transactions };

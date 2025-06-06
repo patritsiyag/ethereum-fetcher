@@ -12,8 +12,12 @@ import { validate } from 'class-validator';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import { TransactionService } from '../transactions/transaction.service';
+import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
 
+/**
+ * Service responsible for interacting with the Ethereum blockchain and managing transaction data.
+ * Handles fetching, storing, and retrieving transaction information.
+ */
 @Injectable()
 export class EthereumService {
   private provider: ethers.JsonRpcProvider;
@@ -24,29 +28,35 @@ export class EthereumService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private readonly jwtService: JwtService,
-    private readonly transactionService: TransactionService,
+    private jwtService: JwtService,
+    private transactionTrackingService: TransactionTrackingService,
   ) {
     this.provider = new ethers.JsonRpcProvider(process.env.ETH_NODE_URL);
   }
 
-  private async getUserFromToken(token: string): Promise<User | null> {
+  /**
+   * Extracts user ID from JWT token.
+   * @param token - The JWT token containing user information
+   * @returns Promise resolving to the user ID if token is valid, null otherwise
+   */
+  private async getUserFromToken(token: string): Promise<number | null> {
     try {
       const payload = await this.jwtService.verifyAsync<{ sub: number }>(token);
-      try {
-        return await this.userRepository.findOne({
-          where: { id: payload.sub },
-        });
-      } catch (error) {
-        this.logger.error('Failed to find user', error);
-        return null;
-      }
+      return payload.sub;
     } catch (error) {
       this.logger.error('Failed to verify JWT token', error);
       return null;
     }
   }
 
+  /**
+   * Fetches transaction information for given transaction hashes.
+   * First checks the database for existing transactions, then fetches missing ones from the blockchain.
+   * Optionally tracks the transactions for an authenticated user.
+   * @param hashes - Array of transaction hashes to fetch
+   * @param authToken - Optional JWT token for user authentication
+   * @returns Promise resolving to an array of TransactionDto objects
+   */
   async getTransactionsByHashes(
     hashes: string[],
     authToken?: string,
@@ -87,10 +97,10 @@ export class EthereumService {
       .filter((tx): tx is Transaction => tx !== null);
 
     if (authToken) {
-      const user = await this.getUserFromToken(authToken);
-      if (user) {
-        await this.transactionService.trackTransactionsForUser(
-          user.id,
+      const userId = await this.getUserFromToken(authToken);
+      if (userId) {
+        await this.transactionTrackingService.trackTransactionsForUser(
+          userId,
           allTransactions,
         );
       }
@@ -98,6 +108,13 @@ export class EthereumService {
     return allTransactions.map((tx) => fromEntity(tx));
   }
 
+  /**
+   * Saves a transaction to the database after validation.
+   * @param transaction - The transaction data from the blockchain
+   * @param transactionReceipt - The transaction receipt from the blockchain
+   * @returns Promise resolving to the saved Transaction entity
+   * @throws Error if transaction data is invalid or saving fails
+   */
   async saveTransaction(
     transaction: ethers.TransactionResponse,
     transactionReceipt: ethers.TransactionReceipt,
@@ -121,6 +138,13 @@ export class EthereumService {
     }
   }
 
+  /**
+   * Decodes RLP-encoded transaction hashes and fetches their information.
+   * @param rlphex - RLP-encoded hexadecimal string containing transaction hashes
+   * @param authToken - Optional JWT token for user authentication
+   * @returns Promise resolving to an array of TransactionDto objects
+   * @throws Error if RLP decoding fails or data is invalid
+   */
   async getTransactionsByRlpHex(
     rlphex: string,
     authToken?: string,

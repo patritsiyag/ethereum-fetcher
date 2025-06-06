@@ -1,3 +1,4 @@
+// src/eth/eth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -5,7 +6,7 @@ import { EthereumService } from './eth.service';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import { TransactionService } from '../transactions/transaction.service';
+import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
 import { TransactionResponse } from 'ethers';
 import { TransactionReceipt } from 'ethers';
 import { Provider, Block, OrphanFilter } from 'ethers';
@@ -57,9 +58,8 @@ jest.mock('../transactions/transactions.dto', () => ({
 describe('EthereumService', () => {
   let service: EthereumService;
   let transactionRepository: Repository<Transaction>;
-  let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let transactionService: TransactionService;
+  let transactionTrackingService: TransactionTrackingService;
 
   const mockTransactions: Transaction[] = [
     {
@@ -89,13 +89,6 @@ describe('EthereumService', () => {
       users: [],
     },
   ];
-
-  const mockUser = {
-    id: 1,
-    username: 'testuser',
-    password: 'password',
-    transactions: [],
-  };
 
   const mockTx: Partial<TransactionResponse> = {
     hash: '0x789',
@@ -169,6 +162,8 @@ describe('EthereumService', () => {
           provide: getRepositoryToken(User),
           useValue: {
             findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
           },
         },
         {
@@ -178,7 +173,7 @@ describe('EthereumService', () => {
           },
         },
         {
-          provide: TransactionService,
+          provide: TransactionTrackingService,
           useValue: {
             trackTransactionsForUser: jest.fn().mockResolvedValue(undefined),
           },
@@ -190,9 +185,10 @@ describe('EthereumService', () => {
     transactionRepository = module.get<Repository<Transaction>>(
       getRepositoryToken(Transaction),
     );
-    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-    transactionService = module.get<TransactionService>(TransactionService);
+    transactionTrackingService = module.get<TransactionTrackingService>(
+      TransactionTrackingService,
+    );
 
     service['provider'] = {
       getTransaction: jest.fn(),
@@ -293,18 +289,14 @@ describe('EthereumService', () => {
       const verifySpy = jest
         .spyOn(jwtService, 'verifyAsync')
         .mockResolvedValue({ sub: 1 });
-      const findOneSpy = jest
-        .spyOn(userRepository, 'findOne')
-        .mockResolvedValue(mockUser as User);
       const trackSpy = jest.spyOn(
-        transactionService,
+        transactionTrackingService,
         'trackTransactionsForUser',
       );
 
       await service.getTransactionsByHashes(['0x123'], 'valid-token');
 
       expect(verifySpy).toHaveBeenCalledWith('valid-token');
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(trackSpy).toHaveBeenCalledWith(1, [mockTransactions[0]]);
     });
 
@@ -316,7 +308,7 @@ describe('EthereumService', () => {
         .spyOn(jwtService, 'verifyAsync')
         .mockRejectedValue(new Error('Invalid token'));
       const trackSpy = jest.spyOn(
-        transactionService,
+        transactionTrackingService,
         'trackTransactionsForUser',
       );
 
@@ -467,12 +459,15 @@ describe('EthereumService', () => {
   });
 
   describe('getUserFromToken', () => {
-    it('should return user for valid token', async () => {
-      jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({ sub: 1 });
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+    it('should return user ID for valid token', async () => {
+      const verifySpy = jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValue({ sub: 1 });
 
       const result = await service['getUserFromToken']('valid-token');
-      expect(result).toEqual(mockUser);
+
+      expect(verifySpy).toHaveBeenCalledWith('valid-token');
+      expect(result).toBe(1);
     });
 
     it('should return null for invalid token', async () => {
@@ -484,21 +479,25 @@ describe('EthereumService', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null for valid token but non-existent user', async () => {
-      jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({ sub: 999 });
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+    it('should return user ID for valid token with any user ID', async () => {
+      const verifySpy = jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValue({ sub: 999 });
 
       const result = await service['getUserFromToken']('valid-token');
-      expect(result).toBeNull();
+
+      expect(verifySpy).toHaveBeenCalledWith('valid-token');
+      expect(result).toBe(999);
     });
 
-    it('should handle database errors gracefully', async () => {
-      jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({ sub: 1 });
-      jest
-        .spyOn(userRepository, 'findOne')
-        .mockRejectedValue(new Error('DB error'));
+    it('should return null for database errors', async () => {
+      const verifySpy = jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockRejectedValue(new Error('Database error'));
 
       const result = await service['getUserFromToken']('valid-token');
+
+      expect(verifySpy).toHaveBeenCalledWith('valid-token');
       expect(result).toBeNull();
     });
   });
