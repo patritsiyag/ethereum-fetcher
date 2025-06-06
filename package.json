@@ -17,7 +17,11 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "docker:build": "docker build -t ethereum-fetcher .",
+    "docker:run": "docker run -d -p 3000:3000 --name ethereum-fetcher -e ETH_NODE_URL=https://sepolia.infura.io/v3/YOUR-PROJECT-ID -e DB_CONNECTION_URL=postgresql://username:password@host.docker.internal:5432/postgres -e JWT_SECRET=your-secret-key ethereum-fetcher",
+    "docker:stop": "docker stop ethereum-fetcher && docker rm ethereum-fetcher",
+    "docker:logs": "docker logs ethereum-fetcher"
   },
   "dependencies": {
     "@ethereumjs/rlp": "^10.0.0",

@@ -92,6 +92,28 @@ cp .env.example .env
 npm run start:dev
 ```
 
+### Docker Deployment
+
+1. Build the Docker image using npm:
+```bash
+npm run docker:build
+```
+
+2. Start the container using npm:
+```bash
+npm run docker:start
+```
+
+3. Stop the container using npm:
+```bash
+npm run docker:stop
+```
+
+4. View container logs:
+```bash
+npm run docker:logs
+```
+
 ### Database Setup
 
 The application uses TypeORM migrations for database management. Migrations are automatically run on application startup, ensuring your database is always in the correct state.
@@ -202,23 +224,3 @@ The test suite covers:
 - RLP decoding
 - Database operations
 - JWT token generation and validation
-
-## Areas for Improvement
-
-1. **Repository Pattern**
-   - Refactor the architecture to use repositories for better separation of concerns and testability.
-2. **Testing Framework**
-   - The requirements mention Mocha, but the project uses Jest. Consider aligning documentation and scripts, or migrating if needed.
-3. **DTOs and Entities**
-   - Improve the structure and validation of DTOs and entities for better maintainability and type safety.
-4. **Dockerization**
-   - Enhance the Docker setup for multi-stage builds, environment variable management, and production readiness.
-5. **Error Handling**
-   - Implement more robust error handling and validation throughout the API.
-6. **API Documentation**
-   - Add OpenAPI/Swagger documentation for easier client integration.
-7. **Health Module Enhancement**
-   - Implement comprehensive health checks for all endpoints
-   - Monitor database connection status
-   - Track API endpoint response times
-   - Add custom health indicators for critical services
