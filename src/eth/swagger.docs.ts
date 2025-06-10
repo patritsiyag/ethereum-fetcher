@@ -87,10 +87,29 @@ export const getTransactionsByHashesOperation = ApiOperation({
 export const getTransactionsByHashesQuery = ApiQuery({
   name: 'transactionHashes',
   type: 'string',
-  isArray: true,
   required: true,
-  description: 'List of transaction hashes to fetch',
-  example: '0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e',
+  description:
+    'Transaction hash(es) to fetch. Can be a single hash or a JSON array of hashes',
+  example:
+    '["0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e"]',
+  schema: {
+    oneOf: [
+      {
+        type: 'string',
+        example:
+          '0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e',
+      },
+      {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+        example: [
+          '0xfc2b3b6db38a51db3b9cb95de29b719de8deb99630626e4b4b99df056ffb7f2e',
+        ],
+      },
+    ],
+  },
 });
 
 export const getTransactionsByHashesResponse = ApiResponse({

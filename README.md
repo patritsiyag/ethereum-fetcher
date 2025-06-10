@@ -114,6 +114,8 @@ npm run docker:stop
 npm run docker:logs
 ```
 
+The application will be available at `http://localhost:3001` when running in Docker.
+
 ### Database Setup
 
 The application uses TypeORM migrations for database management. Migrations are automatically run on application startup, ensuring your database is always in the correct state.
@@ -129,6 +131,11 @@ The application comes with a migration that seeds initial users:
 These users are created with hashed passwords and can be used for testing.
 
 ## API Documentation
+
+The API documentation is available through Swagger UI:
+
+- Local development: `http://localhost:3000/api/document`
+- Docker: `http://localhost:3001/api/document`
 
 ### 1. Get Transaction Information
 `GET /lime/eth?transactionHashes`
@@ -217,7 +224,10 @@ Run the test suite:
 npm test
 ```
 
-> **Note:** The test suite uses **Jest** (not Mocha as in the original requirements).
+The test suite uses **Jest** for testing and mocking. The tests are written in TypeScript and follow the following structure:
+
+- Unit tests: `src/**/*.spec.ts`
+- E2E tests: `test/**/*.e2e-spec.ts`
 
 The test suite covers:
 - Service level functionality
