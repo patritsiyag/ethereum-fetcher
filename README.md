@@ -49,6 +49,7 @@ A REST API server that fetches and stores Ethereum transaction information. The 
 2. **Database Choice: PostgreSQL**
    - ACID compliance for transaction data
    - JSON support for flexible schema
+   - Migration-based schema management
 
 3. **Authentication: JWT**
    - Stateless authentication
@@ -63,31 +64,6 @@ A REST API server that fetches and stores Ethereum transaction information. The 
 - PostgreSQL database
 - Ethereum node URL (from Infura or Alchemy)
 
-### Database Setup
-
-1. **Install PostgreSQL**:
-   ```bash
-   # For macOS:
-   brew install postgresql
-   brew services start postgresql
-
-   # For Windows:
-   # Download and install from https://www.postgresql.org/download/windows/
-   ```
-
-2. **Create Database**:
-   ```bash
-   # Create a new database
-   createdb ethereum_fetcher
-   ```
-
-3. **Configure Database Connection**:
-   In your `.env` file, set the database connection URL:
-   ```env
-   DB_CONNECTION_URL=postgresql://username:password@localhost:5432/ethereum_fetcher
-   ```
-   Replace `username` and `password` with your PostgreSQL credentials.
-
 ### Environment Variables
 
 Create a `.env` file in the root directory:
@@ -95,7 +71,7 @@ Create a `.env` file in the root directory:
 ```env
 API_PORT=3000
 ETH_NODE_URL=https://sepolia.infura.io/v3/YOUR-PROJECT-ID
-DB_CONNECTION_URL=postgresql://username:password@localhost:5432/ethereum_fetcher
+DB_CONNECTION_URL=postgresql://username:password@localhost:5432/postgres
 JWT_SECRET=your-secret-key
 ```
 
@@ -103,19 +79,63 @@ JWT_SECRET=your-secret-key
 
 1. Clone the repository
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 3. Copy the environment configuration template:
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
+
 4. Start the server:
-   ```bash
-   npm run start:dev
-   ```
+```bash
+npm run start:dev
+```
+
+### Docker Deployment
+
+1. Build the Docker image using npm:
+```bash
+npm run docker:build
+```
+
+2. Start the container using npm:
+```bash
+npm run docker:start
+```
+
+3. Stop the container using npm:
+```bash
+npm run docker:stop
+```
+
+4. View container logs:
+```bash
+npm run docker:logs
+```
+
+The application will be available at `http://localhost:3001` when running in Docker.
+
+### Database Setup
+
+The application uses TypeORM migrations for database management. Migrations are automatically run on application startup, ensuring your database is always in the correct state.
+
+#### Initial Data
+
+The application comes with a migration that seeds initial users:
+- alice/alice
+- bob/bob
+- carol/carol
+- dave/dave
+
+These users are created with hashed passwords and can be used for testing.
 
 ## API Documentation
+
+The API documentation is available through Swagger UI:
+
+- Local development: `http://localhost:3000/api/document`
+- Docker: `http://localhost:3001/api/document`
 
 ### 1. Get Transaction Information
 `GET /lime/eth?transactionHashes`
@@ -204,31 +224,13 @@ Run the test suite:
 npm test
 ```
 
-> **Note:** The test suite uses **Jest** (not Mocha as in the original requirements).
+The test suite uses **Jest** for testing and mocking. The tests are written in TypeScript and follow the following structure:
+
+- Unit tests: `src/**/*.spec.ts`
+- E2E tests: `test/**/*.e2e-spec.ts`
 
 The test suite covers:
 - Service level functionality
 - RLP decoding
 - Database operations
 - JWT token generation and validation
-
-
-## Areas for Improvement
-
-1. **Repository Pattern**
-   - Refactor the architecture to use repositories for better separation of concerns and testability.
-2. **Testing Framework**
-   - The requirements mention Mocha, but the project uses Jest. Consider aligning documentation and scripts, or migrating if needed.
-3. **DTOs and Entities**
-   - Improve the structure and validation of DTOs and entities for better maintainability and type safety.
-4. **Dockerization**
-   - Enhance the Docker setup for multi-stage builds, environment variable management, and production readiness.
-5. **Error Handling**
-   - Implement more robust error handling and validation throughout the API.
-6. **API Documentation**
-   - Add OpenAPI/Swagger documentation for easier client integration.
-7. **Health Module Enhancement**
-   - Implement comprehensive health checks for all endpoints
-   - Monitor database connection status
-   - Track API endpoint response times
-   - Add custom health indicators for critical services

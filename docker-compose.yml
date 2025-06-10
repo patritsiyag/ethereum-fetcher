@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ethereum-fetcher-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ethereum_fetcher
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ethereum-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ethereum_fetcher"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+    container_name: ethereum-fetcher-app
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ETH_NODE_URL=${ETH_NODE_URL}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-ethereum_fetcher}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - DB_CONNECTION_URL=postgresql://postgres:postgres@postgres:5432/ethereum_fetcher
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ethereum-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/lime/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+
+networks:
+  ethereum-network:
+    name: ethereum-fetcher-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ethereum-fetcher-postgres-data 

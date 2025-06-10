@@ -4,8 +4,12 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from './entities/transaction.entity';
 
+/**
+ * Service responsible for tracking and managing user-transaction associations.
+ * Handles the many-to-many relationship between users and transactions.
+ */
 @Injectable()
-export class TransactionService {
+export class TransactionTrackingService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -13,6 +17,13 @@ export class TransactionService {
     private transactionRepository: Repository<Transaction>,
   ) {}
 
+  /**
+   * Associates a list of transactions with a specific user.
+   * Creates the many-to-many relationship between the user and their transactions.
+   * @param userId - The ID of the user to associate transactions with
+   * @param transactions - Array of transactions to associate with the user
+   * @returns Promise resolving when the association is complete
+   */
   async trackTransactionsForUser(
     userId: number,
     transactions: Transaction[],
@@ -22,25 +33,12 @@ export class TransactionService {
       relations: ['transactions'],
     });
 
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
-    const existingTransactions = await this.transactionRepository
-      .createQueryBuilder('transaction')
-      .innerJoin('transaction.users', 'user', 'user.id = :userId', {
-        userId: user.id,
-      })
-      .getMany();
-
-    user.transactions = [...existingTransactions, ...transactions];
+    // Add new transactions to user's existing transactions
+    user.transactions = [...user.transactions, ...transactions];
     await this.userRepository.save(user);
-  }
-
-  async getUserTransactions(userId: number): Promise<Transaction[]> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['transactions'],
-    });
-
-    return user?.transactions || [];
   }
 }

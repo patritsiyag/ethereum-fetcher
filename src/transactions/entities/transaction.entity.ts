@@ -3,16 +3,16 @@ import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Transaction {
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'transaction_hash' })
   transactionHash: string;
 
-  @Column()
+  @Column({ name: 'transaction_status' })
   transactionStatus: number;
 
-  @Column()
+  @Column({ name: 'block_hash' })
   blockHash: string;
 
-  @Column()
+  @Column({ name: 'block_number' })
   blockNumber: number;
 
   @Column()
@@ -21,10 +21,10 @@ export class Transaction {
   @Column({ nullable: true, type: 'varchar' })
   to: string | null;
 
-  @Column({ nullable: true, type: 'varchar' })
+  @Column({ name: 'contract_address', nullable: true, type: 'varchar' })
   contractAddress: string | null;
 
-  @Column()
+  @Column({ name: 'logs_count' })
   logsCount: number;
 
   @Column()

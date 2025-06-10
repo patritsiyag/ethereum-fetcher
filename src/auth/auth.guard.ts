@@ -21,7 +21,6 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user?: JwtPayload }>();
     const token = this.extractTokenFromHeader(request);
-    console.log('Token:', token);
 
     if (!token) {
       throw new UnauthorizedException('No token provided');
@@ -29,7 +28,6 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
-      console.log('Payload:', payload);
       request.user = payload;
       return true;
     } catch (error) {

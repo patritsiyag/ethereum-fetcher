@@ -4,10 +4,8 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { DataSource } from 'typeorm';
 import * as figlet from 'figlet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { seedUsers } from './users/seed';
 import { ValidationPipe } from '@nestjs/common';
 
 const appName = 'Eth fetcher API';
@@ -27,13 +25,14 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      transform: true,
       forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
-  const dataSource = app.get(DataSource);
-  // Seed users
-  await seedUsers(dataSource);
+
   const config = new DocumentBuilder()
     .setTitle(appName)
     .setDescription('Documentation of API endpoints')
@@ -41,19 +40,17 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/document', app, document);
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 
 bootstrap()
   .then(() => {
     return new Promise<void>((resolve) => {
-      figlet('Eth fetcher', (err, data) => {
+      figlet('Eth fetcher', (err) => {
         if (err) {
-          console.log('Eth fetcher');
           resolve();
           return;
         }
-        console.log(data);
         resolve();
       });
     });

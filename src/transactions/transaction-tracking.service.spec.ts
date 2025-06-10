@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
-import { TransactionService } from './transaction.service';
+import { Repository } from 'typeorm';
+import { TransactionTrackingService } from './transaction-tracking.service';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from './entities/transaction.entity';
 
-describe('TransactionService', () => {
-  let service: TransactionService;
+describe('TransactionTrackingService', () => {
+  let service: TransactionTrackingService;
   let userRepository: Repository<User>;
-  let transactionRepository: Repository<Transaction>;
 
   const mockUser: User = {
     id: 1,
@@ -46,26 +45,10 @@ describe('TransactionService', () => {
     },
   ];
 
-  const mockExistingTransactions: Transaction[] = [
-    {
-      transactionHash: '0x789',
-      transactionStatus: 1,
-      blockHash: '0xghi',
-      blockNumber: 54321,
-      from: '0xsender3',
-      to: '0xreceiver3',
-      contractAddress: null,
-      logsCount: 1,
-      input: '0xexisting',
-      value: '500000000000000000',
-      users: [],
-    },
-  ];
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TransactionService,
+        TransactionTrackingService,
         {
           provide: getRepositoryToken(User),
           useValue: {
@@ -76,26 +59,19 @@ describe('TransactionService', () => {
         {
           provide: getRepositoryToken(Transaction),
           useValue: {
-            createQueryBuilder: jest.fn(() => {
-              const mockQueryBuilder: Partial<SelectQueryBuilder<Transaction>> =
-                {
-                  innerJoin: jest.fn().mockReturnThis(),
-                  getMany: jest
-                    .fn()
-                    .mockResolvedValue(mockExistingTransactions),
-                };
-              return mockQueryBuilder as unknown as SelectQueryBuilder<Transaction>;
+            createQueryBuilder: jest.fn().mockReturnValue({
+              innerJoin: jest.fn().mockReturnThis(),
+              getMany: jest.fn().mockResolvedValue([]),
             }),
           },
         },
       ],
     }).compile();
 
-    service = module.get<TransactionService>(TransactionService);
-    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    transactionRepository = module.get<Repository<Transaction>>(
-      getRepositoryToken(Transaction),
+    service = module.get<TransactionTrackingService>(
+      TransactionTrackingService,
     );
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   describe('trackTransactionsForUser', () => {
@@ -104,14 +80,9 @@ describe('TransactionService', () => {
         .spyOn(userRepository, 'findOne')
         .mockResolvedValue({ ...mockUser });
 
-      const queryBuilderSpy = jest.spyOn(
-        transactionRepository,
-        'createQueryBuilder',
-      );
-
       const saveSpy = jest.spyOn(userRepository, 'save').mockResolvedValue({
         ...mockUser,
-        transactions: [...mockTransactions, ...mockExistingTransactions],
+        transactions: mockTransactions,
       });
 
       await service.trackTransactionsForUser(1, mockTransactions);
@@ -120,10 +91,9 @@ describe('TransactionService', () => {
         where: { id: 1 },
         relations: ['transactions'],
       });
-      expect(queryBuilderSpy).toHaveBeenCalledWith('transaction');
       expect(saveSpy).toHaveBeenCalledWith({
         ...mockUser,
-        transactions: [...mockExistingTransactions, ...mockTransactions],
+        transactions: mockTransactions,
       });
     });
 
@@ -151,41 +121,6 @@ describe('TransactionService', () => {
       await expect(
         service.trackTransactionsForUser(1, mockTransactions),
       ).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('getUserTransactions', () => {
-    it('should return user transactions when user exists', async () => {
-      const userWithTransactions = {
-        ...mockUser,
-        transactions: mockTransactions,
-      };
-
-      jest
-        .spyOn(userRepository, 'findOne')
-        .mockResolvedValue(userWithTransactions);
-
-      const result = await service.getUserTransactions(1);
-
-      expect(result).toEqual(mockTransactions);
-    });
-
-    it('should return empty array when user does not exist', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
-
-      const result = await service.getUserTransactions(999);
-
-      expect(result).toEqual([]);
-    });
-
-    it('should handle database errors gracefully', async () => {
-      jest
-        .spyOn(userRepository, 'findOne')
-        .mockRejectedValue(new Error('Database error'));
-
-      await expect(service.getUserTransactions(1)).rejects.toThrow(
-        'Database error',
-      );
     });
   });
 });

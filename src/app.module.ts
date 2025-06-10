@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EthModule } from './eth/eth.module';
 import { HealthModule } from './health/health.module';
 import { AllModule } from './all/all.module';
@@ -20,18 +20,21 @@ import { TransactionsModule } from './transactions/transactions.module';
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '1h' },
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get('DB_CONNECTION_URL'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: process.env.DB_CONNECTION_URL,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      migrations: [__dirname + '/migrations/*{.ts,.js}'],
+      migrationsRun: true,
+      migrationsTableName: 'migrations',
+      synchronize: false,
+      retryAttempts: 10,
+      retryDelay: 3000,
+      connectTimeoutMS: 10000,
+      ssl: false,
     }),
-    EthModule,
     HealthModule,
+    EthModule,
     AllModule,
     AuthModule,
     MyModule,
