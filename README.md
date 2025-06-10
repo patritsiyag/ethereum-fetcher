@@ -101,7 +101,7 @@ npm run docker:build
 
 2. Start the container using npm:
 ```bash
-npm run docker:start
+npm run docker:run
 ```
 
 3. Stop the container using npm:
