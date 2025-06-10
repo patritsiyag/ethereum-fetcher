@@ -15,9 +15,7 @@ export class CreateTransactionTables1709123456790
         "contract_address" VARCHAR(255),
         "logs_count" INTEGER NOT NULL,
         "input" TEXT NOT NULL,
-        "value" VARCHAR(255) NOT NULL,
-        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-        "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+        "value" VARCHAR(255) NOT NULL
       )
     `);
 
@@ -25,7 +23,6 @@ export class CreateTransactionTables1709123456790
       CREATE TABLE IF NOT EXISTS "user_transactions" (
         "user_id" INTEGER NOT NULL,
         "transaction_hash" VARCHAR(255) NOT NULL,
-        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
         PRIMARY KEY ("user_id", "transaction_hash"),
         FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE,
         FOREIGN KEY ("transaction_hash") REFERENCES "transaction"("transaction_hash") ON DELETE CASCADE
