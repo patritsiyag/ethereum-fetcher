@@ -64,16 +64,30 @@ A REST API server that fetches and stores Ethereum transaction information. The 
 - PostgreSQL database
 - Ethereum node URL (from Infura or Alchemy)
 
-### Environment Variables
+### Database Setup
 
-Create a `.env` file in the root directory:
+1. **Install PostgreSQL**:
+   ```bash
+   # For macOS:
+   brew install postgresql
+   brew services start postgresql
 
-```env
-API_PORT=3000
-ETH_NODE_URL=https://sepolia.infura.io/v3/YOUR-PROJECT-ID
-DB_CONNECTION_URL=postgresql://username:password@localhost:5432/postgres
-JWT_SECRET=your-secret-key
-```
+   # For Windows:
+   # Download and install from https://www.postgresql.org/download/windows/
+   ```
+
+2. **Create Database**:
+   ```bash
+   # Create a new database
+   createdb ethereum_fetcher
+   ```
+
+3. **Configure Database Connection**:
+   Copy the example configuration file and customize it for your environment:
+   ```bash
+   cp .env.example .env
+   ```
+   Then update the database configuration in `.env` with your specific settings.
 
 ### Installation
 
@@ -115,6 +129,24 @@ npm run docker:logs
 ```
 
 The application will be available at `http://localhost:3001` when running in Docker.
+
+### Environment Variables
+
+The application requires several environment variables to run. Copy the `.env.example` file to `.env` and update the values as needed:
+
+```bash
+cp .env.example .env
+```
+
+Required variables in `.env.example`:
+- `DB_USER`: PostgreSQL username
+- `DB_PASSWORD`: PostgreSQL password
+- `DB_NAME`: Database name
+- `DB_PORT`: PostgreSQL port
+- `DB_CONNECTION_URL`: Full database connection URL
+- `API_PORT`: Port for the API server
+- `ETH_NODE_URL`: Ethereum node URL (from Alchemy or Infura)
+- `JWT_SECRET`: Secret key for JWT token generation
 
 ### Database Setup
 
