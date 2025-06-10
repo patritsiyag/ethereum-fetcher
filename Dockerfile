@@ -27,14 +27,14 @@ COPY --from=builder /app/node_modules ./node_modules
 RUN mkdir -p /app/logs && chown -R appuser:appgroup /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV API_PORT=3001
 ENV NODE_OPTIONS="--max-old-space-size=512"
 
 USER appuser
 
-EXPOSE 3000
+EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/lime/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/lime/health || exit 1
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main"]
