@@ -1,19 +1,20 @@
 services:
   postgres:
     image: postgres:15-alpine
+    container_name: ethereum-fetcher-postgres
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5435:5432"
     environment:
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
-      - POSTGRES_DB=${DB_NAME:-ethereum_fetcher}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ethereum_fetcher
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ethereum-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ethereum_fetcher}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ethereum_fetcher"]
+      interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
@@ -21,16 +22,18 @@ services:
   app:
     build:
       context: .
+    container_name: ethereum-fetcher-app
     ports:
-      - "${PORT:-3000}:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=production
-      - PORT=${PORT:-3000}
+      - PORT=3000
       - ETH_NODE_URL=${ETH_NODE_URL}
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_NAME=${DB_NAME:-ethereum_fetcher}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - DB_CONNECTION_URL=postgresql://postgres:postgres@postgres:5432/ethereum_fetcher
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -48,7 +51,9 @@ services:
 
 networks:
   ethereum-network:
+    name: ethereum-fetcher-network
     driver: bridge
 
 volumes:
-  postgres_data: 
+  postgres_data:
+    name: ethereum-fetcher-postgres-data 

@@ -41,18 +41,4 @@ export class TransactionTrackingService {
     user.transactions = [...user.transactions, ...transactions];
     await this.userRepository.save(user);
   }
-
-  /**
-   * Retrieves all transactions associated with a specific user.
-   * @param userId - The ID of the user whose transactions to retrieve
-   * @returns Promise resolving to an array of Transaction entities
-   */
-  async getUserTransactions(userId: number): Promise<Transaction[]> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['transactions'],
-    });
-
-    return user?.transactions || [];
-  }
 }

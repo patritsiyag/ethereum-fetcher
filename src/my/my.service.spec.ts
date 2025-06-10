@@ -4,13 +4,27 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { MyService } from './my.service';
 import { User } from '../users/entities/user.entity';
-import { TransactionTrackingService } from '../transactions/transaction-tracking.service';
 import { Transaction } from '../transactions/entities/transaction.entity';
+import { fromEntity } from '../transactions/transactions.dto';
+
+jest.mock('../transactions/transactions.dto', () => ({
+  fromEntity: jest.fn((entity: Transaction) => ({
+    transactionHash: entity.transactionHash,
+    transactionStatus: entity.transactionStatus,
+    blockHash: entity.blockHash,
+    blockNumber: entity.blockNumber,
+    from: entity.from,
+    to: entity.to,
+    contractAddress: entity.contractAddress,
+    logsCount: entity.logsCount,
+    input: entity.input,
+    value: entity.value,
+  })),
+}));
 
 describe('MyService', () => {
   let service: MyService;
   let userRepository: Repository<User>;
-  let transactionTrackingService: TransactionTrackingService;
 
   const mockUser: User = {
     id: 1,
@@ -58,58 +72,44 @@ describe('MyService', () => {
             findOne: jest.fn(),
           },
         },
-        {
-          provide: TransactionTrackingService,
-          useValue: {
-            getUserTransactions: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<MyService>(MyService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    transactionTrackingService = module.get<TransactionTrackingService>(
-      TransactionTrackingService,
-    );
   });
 
   describe('getMyTransactions', () => {
     it('should return user transactions when user exists', async () => {
-      const findOneSpy = jest.spyOn(userRepository, 'findOne');
-      const getUserTransactionsSpy = jest.spyOn(
-        transactionTrackingService,
-        'getUserTransactions',
-      );
-
-      findOneSpy.mockResolvedValue(mockUser);
-      getUserTransactionsSpy.mockResolvedValue(mockTransactions);
+      const userWithTransactions = {
+        ...mockUser,
+        transactions: mockTransactions,
+      };
+      const findOneSpy = jest
+        .spyOn(userRepository, 'findOne')
+        .mockResolvedValue(userWithTransactions);
 
       const result = await service.getMyTransactions(mockUser.id);
 
       expect(findOneSpy).toHaveBeenCalledWith({
         where: { id: mockUser.id },
+        relations: ['transactions'],
       });
-      expect(getUserTransactionsSpy).toHaveBeenCalledWith(mockUser.id);
-      expect(result).toEqual(mockTransactions);
+      expect(result).toEqual(mockTransactions.map((tx) => fromEntity(tx)));
     });
 
     it('should throw UnauthorizedException when user is not found', async () => {
-      const findOneSpy = jest.spyOn(userRepository, 'findOne');
-      const getUserTransactionsSpy = jest.spyOn(
-        transactionTrackingService,
-        'getUserTransactions',
-      );
-
-      findOneSpy.mockResolvedValue(null);
+      const findOneSpy = jest
+        .spyOn(userRepository, 'findOne')
+        .mockResolvedValue(null);
 
       await expect(service.getMyTransactions(999)).rejects.toThrow(
         UnauthorizedException,
       );
       expect(findOneSpy).toHaveBeenCalledWith({
         where: { id: 999 },
+        relations: ['transactions'],
       });
-      expect(getUserTransactionsSpy).not.toHaveBeenCalled();
     });
   });
 });

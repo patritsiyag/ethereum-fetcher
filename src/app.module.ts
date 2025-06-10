@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EthModule } from './eth/eth.module';
 import { HealthModule } from './health/health.module';
 import { AllModule } from './all/all.module';
@@ -31,9 +31,10 @@ import { TransactionsModule } from './transactions/transactions.module';
       retryAttempts: 10,
       retryDelay: 3000,
       connectTimeoutMS: 10000,
+      ssl: false,
     }),
-    EthModule,
     HealthModule,
+    EthModule,
     AllModule,
     AuthModule,
     MyModule,

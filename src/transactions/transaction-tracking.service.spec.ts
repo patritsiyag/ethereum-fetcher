@@ -45,22 +45,6 @@ describe('TransactionTrackingService', () => {
     },
   ];
 
-  const mockExistingTransactions: Transaction[] = [
-    {
-      transactionHash: '0x789',
-      transactionStatus: 1,
-      blockHash: '0xghi',
-      blockNumber: 54321,
-      from: '0xsender3',
-      to: '0xreceiver3',
-      contractAddress: null,
-      logsCount: 1,
-      input: '0xexisting',
-      value: '500000000000000000',
-      users: [],
-    },
-  ];
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -77,7 +61,7 @@ describe('TransactionTrackingService', () => {
           useValue: {
             createQueryBuilder: jest.fn().mockReturnValue({
               innerJoin: jest.fn().mockReturnThis(),
-              getMany: jest.fn().mockResolvedValue(mockExistingTransactions),
+              getMany: jest.fn().mockResolvedValue([]),
             }),
           },
         },
@@ -137,41 +121,6 @@ describe('TransactionTrackingService', () => {
       await expect(
         service.trackTransactionsForUser(1, mockTransactions),
       ).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('getUserTransactions', () => {
-    it('should return user transactions when user exists', async () => {
-      const userWithTransactions = {
-        ...mockUser,
-        transactions: mockTransactions,
-      };
-
-      jest
-        .spyOn(userRepository, 'findOne')
-        .mockResolvedValue(userWithTransactions);
-
-      const result = await service.getUserTransactions(1);
-
-      expect(result).toEqual(mockTransactions);
-    });
-
-    it('should return empty array when user does not exist', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
-
-      const result = await service.getUserTransactions(999);
-
-      expect(result).toEqual([]);
-    });
-
-    it('should handle database errors gracefully', async () => {
-      jest
-        .spyOn(userRepository, 'findOne')
-        .mockRejectedValue(new Error('Database error'));
-
-      await expect(service.getUserTransactions(1)).rejects.toThrow(
-        'Database error',
-      );
     });
   });
 });

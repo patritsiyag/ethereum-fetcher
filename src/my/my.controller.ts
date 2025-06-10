@@ -15,6 +15,7 @@ import {
   getMyTransactionsResponse404,
   getMyTransactionsResponse500,
 } from './swagger.docs';
+import { ApiHeader } from '@nestjs/swagger';
 
 interface RequestWithUser extends Request {
   user: {
@@ -25,6 +26,11 @@ interface RequestWithUser extends Request {
 
 @Controller('my')
 @UseGuards(AuthGuard)
+@ApiHeader({
+  name: 'AUTH_TOKEN',
+  description: 'Authentication token',
+  required: true,
+})
 export class MyController {
   constructor(private readonly myService: MyService) {}
 
